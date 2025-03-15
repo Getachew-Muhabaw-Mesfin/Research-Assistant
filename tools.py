@@ -146,10 +146,15 @@ dimension = len(dummy_embedding)
 index = faiss.IndexFlatL2(dimension)
 index = faiss.IndexIDMap(index)
 
-# FAISS index initialization with the required argument
-vector_store = FAISS(embedding_function=embeddings.embed_query, 
-                     index=index, 
-                     index_to_docstore_id={})  # Add this argument
+# FAISS index initialization with required 'docstore' argument
+docstore = {}
+
+vector_store = FAISS(
+    embedding_function=embeddings.embed_query, 
+    index=index, 
+    docstore=docstore, 
+    index_to_docstore_id={}  # Add this argument
+)
 
 @tool
 def rag_query_tool(query: str):
