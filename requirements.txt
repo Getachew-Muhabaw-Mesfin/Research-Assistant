@@ -1,5 +1,6 @@
 langchain
 wikipedia
+langchain-huggingface
 langchain-community
 langchain-openai
 langchain-google-genai

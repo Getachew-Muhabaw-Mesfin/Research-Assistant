@@ -1,6 +1,6 @@
+from langchain.tools import Tool, tool
 from langchain_community.tools import WikipediaQueryRun, DuckDuckGoSearchRun
 from langchain_community.utilities import WikipediaAPIWrapper, PubMedAPIWrapper
-from langchain.tools import tool
 from datetime import datetime
 from reportlab.lib.pagesizes import letter
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
@@ -12,11 +12,11 @@ import matplotlib.pyplot as plt
 from bs4 import BeautifulSoup
 import requests
 import os
-from sentence_transformers import SentenceTransformer
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
-from langchain.docstore.document import Document
+import faiss
 
-# Existing tools
+# Existing tools (unchanged)
 def save_to_txt(data: str, filename: str = "research_output.txt"):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     formatted_text = f"--- Research Output ---\nTimestamp: {timestamp}\n\n{data}\n\n"
@@ -40,7 +40,7 @@ search_tool = Tool(
 api_wrapper = WikipediaAPIWrapper(top_k_results=1, doc_content_chars_max=100)
 wiki_tool = WikipediaQueryRun(api_wrapper=api_wrapper)
 
-# New Features
+# New Features (unchanged)
 @tool
 def pdf_report_tool(data: dict, filename: str = "research_report.pdf"):
     """Generates a professional PDF research report"""
@@ -137,18 +137,27 @@ def data_analysis_tool(data: dict, chart_type: str = "bar"):
     except Exception as e:
         return f"Analysis error: {str(e)}"
 
-# RAG System
-model = SentenceTransformer("all-MiniLM-L6-v2")
-vector_store = FAISS.from_texts([], model)
+# Fixed RAG System
+embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
+
+# Create FAISS index with proper dimensions
+dummy_embedding = embeddings.embed_query("dummy")
+dimension = len(dummy_embedding)
+index = faiss.IndexFlatL2(dimension)
+index = faiss.IndexIDMap(index)
+
+# FAISS index initialization with the required argument
+vector_store = FAISS(embedding_function=embeddings.embed_query, 
+                     index=index, 
+                     index_to_docstore_id={})  # Add this argument
 
 @tool
 def rag_query_tool(query: str):
     """Queries the research knowledge base"""
-    docs = vector_store.similarity_search(query, k=3)
-    return [doc.page_content for doc in docs]
-
-def add_to_knowledge_base(text: str):
-    """Adds documents to the research knowledge base"""
-    embedding = model.encode(text)
-    doc = Document(page_content=text)
-    vector_store.add_embeddings([embedding], [doc])
+    try:
+        if vector_store.index.ntotal == 0:
+            return ["Knowledge base is empty. Use add_to_knowledge_base() first."]
+        docs = vector_store.similarity_search(query, k=3)
+        return docs
+    except Exception as e:
+        return f"Error in RAG querying: {str(e)}"
