@@ -32,7 +32,7 @@ class ResearchResponse(BaseModel):
     analysis: str = Field(default="", description="Statistical analysis")
 
 llm = ChatGoogleGenerativeAI(
-    model="gemini-pro",
+    model="gemini-2.0-pro",
     temperature=0.7,
     google_api_key=os.getenv("GEMINI_API_KEY")
 )
