@@ -1,8 +1,19 @@
-langchain 
-wikipedia 
-langchain-community 
+langchain
+wikipedia
+langchain-community
 langchain-openai
-langchain-anthropic
+langchain-google-genai
 python-dotenv
 pydantic
 duckduckgo-search
+google-generativeai
+beautifulsoup4  # Web scraping
+arxiv  # Academic papers
+pandas  # Data analysis
+matplotlib  # Visualization
+reportlab  # PDF generation
+pybtex  # Citation management
+python-docx  # Word document handling
+requests  # HTTP requests
+faiss-cpu  # Vector similarity search
+sentence-transformers  # Embeddings
