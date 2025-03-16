@@ -1,5 +1,7 @@
+import os
+import pandas as pd
+import matplotlib.pyplot as plt
 from dotenv import load_dotenv
-import json
 from pydantic import BaseModel, Field
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate
@@ -17,9 +19,6 @@ from tools import (
     data_analysis_tool,
     rag_query_tool
 )
-import os
-import pandas as pd
-import matplotlib.pyplot as plt
 
 load_dotenv()
 
@@ -40,11 +39,8 @@ llm = ChatGoogleGenerativeAI(
 
 parser = PydanticOutputParser(pydantic_object=ResearchResponse)
 
-prompt = ChatPromptTemplate.from_messages(
-    [
-        (
-            "system",
-            """You are an advanced AI research assistant with these capabilities:
+prompt = ChatPromptTemplate.from_messages([
+    ("system", """You are an advanced AI research assistant with these capabilities:
 1. Conduct comprehensive literature reviews using academic databases
 2. Perform web scraping and data extraction
 3. Generate visualizations and statistical analysis
@@ -53,12 +49,11 @@ prompt = ChatPromptTemplate.from_messages(
 6. Maintain a knowledge base of previous research
 
 Use available tools and structure output as:\n{format_instructions}"""
-        ),
-        ("placeholder", "{chat_history}"),
-        ("human", "{query}"),
-        ("placeholder", "{agent_scratchpad}"),
-    ]
-).partial(format_instructions=parser.get_format_instructions())
+    ),
+    ("placeholder", "{chat_history}"),
+    ("human", "{query}"),
+    ("placeholder", "{agent_scratchpad}"),
+]).partial(format_instructions=parser.get_format_instructions())
 
 tools = [
     search_tool, 
@@ -81,48 +76,52 @@ agent = create_tool_calling_agent(
 
 agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
 
-
 print("\n" + "=" * 50)
-print(" 🤖 AI Research Assistant Agent ")
+print(" 🤖 AI Research Assistant ")
 print("=" * 50)
 
 while True:
     try:
         query = input("\n🔍 What can I help you research? (type 'exit' to quit) ").strip()
 
-        # Exit condition
         if query.lower() == "exit":
             print("\n👋 Goodbye! Closing AI Research Assistant.")
-            break  # Exit loop
+            break 
 
-        # Invoke AI research assistant
         raw_response = agent_executor.invoke({"query": query})
 
-        # Extract output text
         output_text = raw_response.get("output", "")
 
-        # Remove markdown code block markers (```json ... ```)
         if output_text.startswith("```json"):
             output_text = output_text.replace("```json", "").replace("```", "").strip()
 
-        # Parse JSON response
-        structured_response = json.loads(output_text)  # Fix: Proper JSON parsing
+        try:
+            structured_response = parser.parse(output_text)  
+        except Exception as e:
+            print("\n❌ **Error:** Failed to parse AI response.")
+            print("⚠️ **Raw Response:**", raw_response)
+            print("🔍 **Error Details:**", e)
+            continue
 
-        # Display research results
         print("\n📌 **Research Results**")
         print("-" * 50)
-        print(f"📖 **Topic:** {structured_response.get('topic', 'Unknown')}")
-        print(f"📄 **Summary:**\n{structured_response.get('summary', 'No summary available.')}")
-        print(f"📚 **Sources:** {', '.join(structured_response.get('sources', [])) or 'No sources found'}")
-        print(f"🛠 **Tools Used:** {', '.join(structured_response.get('tools_used', [])) or 'No tools used'}")
+        print(f"📖 **Topic:** {structured_response.topic}")
+        print(f"📄 **Summary:**\n{structured_response.summary}")
+        print(f"📚 **Sources:** {', '.join(structured_response.sources) or 'No sources found'}")
+        print(f"🛠 **Tools Used:** {', '.join(structured_response.tools_used) or 'No tools used'}")
 
-    except json.JSONDecodeError:
-        print("\n❌ **Error:** Invalid JSON format received.")
-        print("⚠️ **Raw Response:**", raw_response)
+        if structured_response.citations:
+            print(f"📑 **Citations:** {', '.join(structured_response.citations)}")
+
+        if structured_response.charts:
+            print(f"📊 **Generated Charts:** {', '.join(structured_response.charts)}")
+
+        if structured_response.analysis:
+            print(f"📈 **Analysis:**\n{structured_response.analysis}")
 
     except KeyboardInterrupt:
         print("\n\n👋 Goodbye! Closing AI Research Assistant.")
-        break  # Exit loop on Ctrl+C
+        break  
 
     except Exception as e:
         print("\n❌ **Unexpected Error:**", e)
