@@ -81,29 +81,49 @@ agent = create_tool_calling_agent(
 
 agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
 
-if __name__ == "__main__":
-    query = input("What can I help you research? ")
-    raw_response = agent_executor.invoke({"query": query})
 
+print("\n" + "=" * 50)
+print(" 🤖 AI Research Assistant Agent ")
+print("=" * 50)
+
+while True:
     try:
-        # Extract output string
+        query = input("\n🔍 What can I help you research? (type 'exit' to quit) ").strip()
+
+        # Exit condition
+        if query.lower() == "exit":
+            print("\n👋 Goodbye! Closing AI Research Assistant.")
+            break  # Exit loop
+
+        # Invoke AI research assistant
+        raw_response = agent_executor.invoke({"query": query})
+
+        # Extract output text
         output_text = raw_response.get("output", "")
 
         # Remove markdown code block markers (```json ... ```)
         if output_text.startswith("```json"):
-            output_text = output_text.strip("```json").strip("```").strip()
+            output_text = output_text.replace("```json", "").replace("```", "").strip()
 
         # Parse JSON response
-        structured_response = parser.parse(json.loads(output_text))
+        structured_response = json.loads(output_text)  # Fix: Proper JSON parsing
 
-        print("\nResearch Results:")
-        print(f"Topic: {structured_response.topic}")
-        print(f"Summary: {structured_response.summary}")
-        print(f"Sources: {structured_response.sources}")
-        print(f"Citations: {structured_response.citations}")
-        print(f"Charts Generated: {structured_response.charts}")
-        print(f"Analysis: {structured_response.analysis}")
+        # Display research results
+        print("\n📌 **Research Results**")
+        print("-" * 50)
+        print(f"📖 **Topic:** {structured_response.get('topic', 'Unknown')}")
+        print(f"📄 **Summary:**\n{structured_response.get('summary', 'No summary available.')}")
+        print(f"📚 **Sources:** {', '.join(structured_response.get('sources', [])) or 'No sources found'}")
+        print(f"🛠 **Tools Used:** {', '.join(structured_response.get('tools_used', [])) or 'No tools used'}")
+
+    except json.JSONDecodeError:
+        print("\n❌ **Error:** Invalid JSON format received.")
+        print("⚠️ **Raw Response:**", raw_response)
+
+    except KeyboardInterrupt:
+        print("\n\n👋 Goodbye! Closing AI Research Assistant.")
+        break  # Exit loop on Ctrl+C
 
     except Exception as e:
-        print("Error parsing response:", e)
-        print("Raw Response:", raw_response)
+        print("\n❌ **Unexpected Error:**", e)
+        print("⚠️ **Raw Response:**", raw_response)
