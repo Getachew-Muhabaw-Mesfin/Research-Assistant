@@ -31,8 +31,22 @@ class ResearchResponse(BaseModel):
     charts: list[str] = Field(default=[], description="Generated chart filenames")
     analysis: str = Field(default="", description="Statistical analysis")
 
+model_choices = {
+    "1": "gemini-1.5-flash",
+    "2": "gemini-2.0-flash",
+    "3": "gemini-1.5-pro"
+}
+
+while True:
+    model_choice = input("\nChoose the AI model:\n1. gemini-1.5-flash\n2. gemini-2.0-flash\n3. gemini-1.5-pro\nEnter the number (1-3): ").strip()
+    if model_choice in model_choices:
+        model_name = model_choices[model_choice]
+        break
+    else:
+        print("\n❌ Please select the correct model (1-3) and try again.")
+
 llm = ChatGoogleGenerativeAI(
-    model="gemini-2.0-flash",
+    model=model_name, 
     temperature=0.7,
     google_api_key=os.getenv("GEMINI_API_KEY")
 )
