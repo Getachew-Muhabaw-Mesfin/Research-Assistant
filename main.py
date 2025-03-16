@@ -1,4 +1,5 @@
 from dotenv import load_dotenv
+import json
 from pydantic import BaseModel, Field
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.prompts import ChatPromptTemplate
@@ -32,7 +33,7 @@ class ResearchResponse(BaseModel):
     analysis: str = Field(default="", description="Statistical analysis")
 
 llm = ChatGoogleGenerativeAI(
-    model="gemini-2.0-pro",
+    model="gemini-2.0-flash",
     temperature=0.7,
     google_api_key=os.getenv("GEMINI_API_KEY")
 )
@@ -83,9 +84,18 @@ agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
 if __name__ == "__main__":
     query = input("What can I help you research? ")
     raw_response = agent_executor.invoke({"query": query})
-    
+
     try:
-        structured_response = parser.parse(raw_response.get("output")[0]["text"])
+        # Extract output string
+        output_text = raw_response.get("output", "")
+
+        # Remove markdown code block markers (```json ... ```)
+        if output_text.startswith("```json"):
+            output_text = output_text.strip("```json").strip("```").strip()
+
+        # Parse JSON response
+        structured_response = parser.parse(json.loads(output_text))
+
         print("\nResearch Results:")
         print(f"Topic: {structured_response.topic}")
         print(f"Summary: {structured_response.summary}")
@@ -93,6 +103,7 @@ if __name__ == "__main__":
         print(f"Citations: {structured_response.citations}")
         print(f"Charts Generated: {structured_response.charts}")
         print(f"Analysis: {structured_response.analysis}")
+
     except Exception as e:
         print("Error parsing response:", e)
         print("Raw Response:", raw_response)
