@@ -16,7 +16,6 @@ from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_community.vectorstores import FAISS
 import faiss
 
-# Existing tools (unchanged)
 def save_to_txt(data: str, filename: str = "research_output.txt"):
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     formatted_text = f"--- Research Output ---\nTimestamp: {timestamp}\n\n{data}\n\n"
@@ -40,7 +39,6 @@ search_tool = Tool(
 api_wrapper = WikipediaAPIWrapper(top_k_results=1, doc_content_chars_max=100)
 wiki_tool = WikipediaQueryRun(api_wrapper=api_wrapper)
 
-# New Features (unchanged)
 @tool
 def pdf_report_tool(data: dict, filename: str = "research_report.pdf"):
     """Generates a professional PDF research report"""
@@ -137,23 +135,20 @@ def data_analysis_tool(data: dict, chart_type: str = "bar"):
     except Exception as e:
         return f"Analysis error: {str(e)}"
 
-# Fixed RAG System
 embeddings = HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L6-v2")
 
-# Create FAISS index with proper dimensions
 dummy_embedding = embeddings.embed_query("dummy")
 dimension = len(dummy_embedding)
 index = faiss.IndexFlatL2(dimension)
 index = faiss.IndexIDMap(index)
 
-# FAISS index initialization with required 'docstore' argument
 docstore = {}
 
 vector_store = FAISS(
     embedding_function=embeddings.embed_query, 
     index=index, 
     docstore=docstore, 
-    index_to_docstore_id={}  # Add this argument
+    index_to_docstore_id={} 
 )
 
 @tool
