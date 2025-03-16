@@ -118,21 +118,21 @@ while True:
             print("🔍 **Error Details:**", e)
             continue
 
-        print("\n📌 **Research Results**")
+        print("\n📌 =====Research Results=====")
         print("-" * 50)
-        print(f"📖 **Topic:** {structured_response.topic}")
-        print(f"📄 **Summary:**\n{structured_response.summary}")
-        print(f"📚 **Sources:** {', '.join(structured_response.sources) or 'No sources found'}")
-        print(f"🛠 **Tools Used:** {', '.join(structured_response.tools_used) or 'No tools used'}")
+        print(f"📖 Topic: {structured_response.topic}")
+        print(f"📄 Summary:\n{structured_response.summary}")
+        print(f"📚 Sources:{', '.join(structured_response.sources) or 'No sources found'}")
+        print(f"🛠 Tools Used: {', '.join(structured_response.tools_used) or 'No tools used'}")
 
         if structured_response.citations:
-            print(f"📑 **Citations:** {', '.join(structured_response.citations)}")
+            print(f"📑 Citations: {', '.join(structured_response.citations)}")
 
         if structured_response.charts:
-            print(f"📊 **Generated Charts:** {', '.join(structured_response.charts)}")
+            print(f"📊 Generated Charts: {', '.join(structured_response.charts)}")
 
         if structured_response.analysis:
-            print(f"📈 **Analysis:**\n{structured_response.analysis}")
+            print(f"📈 Analysis:\n{structured_response.analysis}")
 
     except KeyboardInterrupt:
         print("\n\n👋 Goodbye! Closing AI Research Assistant.")
