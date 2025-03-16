@@ -37,23 +37,11 @@ model_choices = {
     "3": "gemini-1.5-pro"
 }
 
-while True:
-    model_choice = input("\nChoose the AI model:\n1. gemini-1.5-flash\n2. gemini-2.0-flash\n3. gemini-1.5-pro\nEnter the number (1-3): ").strip()
-    if model_choice in model_choices:
-        model_name = model_choices[model_choice]
-        break
-    else:
-        print("\n❌ Please select the correct model (1-3) and try again.")
-
-llm = ChatGoogleGenerativeAI(
-    model=model_name, 
-    temperature=0.7,
-    google_api_key=os.getenv("GEMINI_API_KEY")
-)
+llm = None  # We'll initialize the LLM inside the query loop
 
 parser = PydanticOutputParser(pydantic_object=ResearchResponse)
 
-prompt = ChatPromptTemplate.from_messages([
+prompt = ChatPromptTemplate.from_messages([ 
     ("system", """You are an advanced AI research assistant with these capabilities:
 1. Conduct comprehensive literature reviews using academic databases
 2. Perform web scraping and data extraction
@@ -82,20 +70,33 @@ tools = [
     rag_query_tool
 ]
 
-agent = create_tool_calling_agent(
-    llm=llm,
-    prompt=prompt,
-    tools=tools
-)
-
-agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
-
 print("\n" + "=" * 50)
 print(" 🤖 AI Research Assistant ")
 print("=" * 50)
 
 while True:
     try:
+        # Ask user to choose model for each query
+        model_choice = input("\nChoose the AI model:\n1. gemini-1.5-flash\n2. gemini-2.0-flash\n3. gemini-1.5-pro\nEnter the number (1-3): ").strip()
+        if model_choice in model_choices:
+            model_name = model_choices[model_choice]
+            llm = ChatGoogleGenerativeAI(
+                model=model_name, 
+                temperature=0.7,
+                google_api_key=os.getenv("GEMINI_API_KEY")
+            )
+        else:
+            print("\n❌ Please select the correct model (1-3) and try again.")
+            continue
+
+        agent = create_tool_calling_agent(
+            llm=llm,
+            prompt=prompt,
+            tools=tools
+        )
+
+        agent_executor = AgentExecutor(agent=agent, tools=tools, verbose=True)
+
         query = input("\n🔍 What can I help you research? (type 'exit' to quit) ").strip()
 
         if query.lower() == "exit":
